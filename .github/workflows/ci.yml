@@ -30,7 +30,7 @@ jobs:
         os: [ubuntu-22.04]
         scala: [2.12, 2.13, 3]
         java: [temurin@8]
-        project: [disciplineNative, disciplineJS, disciplineJVM]
+        project: [disciplineJS, disciplineJVM, disciplineNative]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -62,13 +62,13 @@ jobs:
         if: matrix.java == 'temurin@8' && matrix.os == 'ubuntu-22.04'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' headerCheckAll scalafmtCheckAll 'project /' scalafmtSbtCheck
 
-      - name: nativeLink
-        if: matrix.project == 'disciplineNative'
-        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/nativeLink
-
       - name: scalaJSLink
         if: matrix.project == 'disciplineJS'
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/scalaJSLinkerResult
+
+      - name: nativeLink
+        if: matrix.project == 'disciplineNative'
+        run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' Test/nativeLink
 
       - name: Test
         run: sbt 'project ${{ matrix.project }}' '++ ${{ matrix.scala }}' test
@@ -83,11 +83,11 @@ jobs:
 
       - name: Make target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: mkdir -p core/.native/target core/.js/target core/.jvm/target project/target
+        run: mkdir -p target/out/native0.5/scala-3.3.7/discipline-core target/out/sjs1/scala-3.3.7/discipline-core target/out/jvm/scala-3.3.7/discipline-core project/target
 
       - name: Compress target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
-        run: tar cf targets.tar core/.native/target core/.js/target core/.jvm/target project/target
+        run: tar cf targets.tar target/out/native0.5/scala-3.3.7/discipline-core target/out/sjs1/scala-3.3.7/discipline-core target/out/jvm/scala-3.3.7/discipline-core project/target
 
       - name: Upload target directories
         if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v') || github.ref == 'refs/heads/main')
@@ -127,16 +127,6 @@ jobs:
         if: matrix.java == 'temurin@8' && steps.setup-java-temurin-8.outputs.cache-hit == 'false'
         run: sbt +update
 
-      - name: Download target directories (2.12, disciplineNative)
-        uses: actions/download-artifact@v6
-        with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-2.12-disciplineNative
-
-      - name: Inflate target directories (2.12, disciplineNative)
-        run: |
-          tar xf targets.tar
-          rm targets.tar
-
       - name: Download target directories (2.12, disciplineJS)
         uses: actions/download-artifact@v6
         with:
@@ -157,12 +147,12 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (2.13, disciplineNative)
+      - name: Download target directories (2.12, disciplineNative)
         uses: actions/download-artifact@v6
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-disciplineNative
+          name: target-${{ matrix.os }}-${{ matrix.java }}-2.12-disciplineNative
 
-      - name: Inflate target directories (2.13, disciplineNative)
+      - name: Inflate target directories (2.12, disciplineNative)
         run: |
           tar xf targets.tar
           rm targets.tar
@@ -187,12 +177,12 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (3, disciplineNative)
+      - name: Download target directories (2.13, disciplineNative)
         uses: actions/download-artifact@v6
         with:
-          name: target-${{ matrix.os }}-${{ matrix.java }}-3-disciplineNative
+          name: target-${{ matrix.os }}-${{ matrix.java }}-2.13-disciplineNative
 
-      - name: Inflate target directories (3, disciplineNative)
+      - name: Inflate target directories (2.13, disciplineNative)
         run: |
           tar xf targets.tar
           rm targets.tar
@@ -213,6 +203,16 @@ jobs:
           name: target-${{ matrix.os }}-${{ matrix.java }}-3-disciplineJVM
 
       - name: Inflate target directories (3, disciplineJVM)
+        run: |
+          tar xf targets.tar
+          rm targets.tar
+
+      - name: Download target directories (3, disciplineNative)
+        uses: actions/download-artifact@v6
+        with:
+          name: target-${{ matrix.os }}-${{ matrix.java }}-3-disciplineNative
+
+      - name: Inflate target directories (3, disciplineNative)
         run: |
           tar xf targets.tar
           rm targets.tar
@@ -274,5 +274,5 @@ jobs:
       - name: Submit Dependencies
         uses: scalacenter/sbt-dependency-submission@v2
         with:
-          modules-ignore: disciplinenative_2.12 disciplinenative_2.13 disciplinenative_3 disciplinejs_2.12 disciplinejs_2.13 disciplinejs_3 disciplinejvm_2.12 disciplinejvm_2.13 disciplinejvm_3
+          modules-ignore: disciplinejs_2.12 disciplinejs_2.13 disciplinejs_3 disciplinejvm_2.12 disciplinejvm_2.13 disciplinejvm_3 disciplinenative_2.12 disciplinenative_2.13 disciplinenative_3
           configs-ignore: test scala-tool scala-doc-tool test-internal
